@@ -5,7 +5,7 @@
 
 export CXX=g++-9.2.0
 
-export VSIM_SEPP="questa-2023.4"
+export VSIM_SEPP="questa-2025.1"
 export VSIM="${VSIM_SEPP} vsim"
 export VOPT="${VSIM_SEPP} vopt"
 export VLIB="${VSIM_SEPP} vlib"
