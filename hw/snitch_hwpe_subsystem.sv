@@ -206,12 +206,7 @@ module snitch_hwpe_subsystem
     .clk_o    (hwpe_clk[1])
   );
 
-  redmule_top #(
-    .ID_WIDTH     (IdWidth),
-    .N_CORES      (NrCores),
-    .DW           (HwpeDataWidth),
-    .HCI_SIZE_tcdm(HCISizeTcdm)
-  ) i_redmule_top (
+  mxcore_hwpe_top i_mxcore_top (
     .clk_i      (hwpe_clk[0]),
     .rst_ni     (rst_ni),
     .test_mode_i(test_mode_i),
