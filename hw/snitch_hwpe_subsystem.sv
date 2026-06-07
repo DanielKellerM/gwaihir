@@ -192,7 +192,7 @@ module snitch_hwpe_subsystem
   end
   assign hwpe_evt_o = hwpe_evt_q;
 
-  tc_clk_gating i_redmule_clk_gate (
+  tc_clk_gating i_mxcore_clk_gate (
     .clk_i    (clk_i),
     .en_i     (clk_en[0]),
     .test_en_i('0),

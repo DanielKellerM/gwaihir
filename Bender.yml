@@ -18,9 +18,10 @@ dependencies:
   floo_noc: { version: "0.8.1", upstream_name: "FlooNoC" }
   apb: "0.2.4"
   common_cells: "1.39.0"
-  snitch_cluster:     { git: "https://github.com/Jayanth2209/snitch_cluster.git",       rev: "ae63f659a11147be89175477718aadf974bc0b13" }
+  snitch_cluster:     { git: "https://github.com/Jayanth2209/snitch_cluster.git",       rev: "7335a5248e25c90b6437e2f4d141742ea771b2ec" }
   cheshire:           { git: "https://github.com/pulp-platform/cheshire.git",           rev: "main"                                     }
-  mxcore:             { path: "../../mxcore/mxcore-rtl"                                                                                 }
+  mxcore:             { path: "../mxcore/mxcore-rtl"                                                                                    }
+  datamover:          { git: "https://github.com/pulp-platform/datamover.git",          rev: "5df9c9bd9e10ad020763c4291c571adf35ef4ae2" }
   obi:                { git: "https://github.com/pulp-platform/obi.git",                rev: "acfcd0f80c7539aa8da7821a66d9acf2074a5b4e" }
   axi_obi:            { path: "hw/axi_obi"                                                                                              }
   gwaihir-pd:         { path: "./pd"                                                                                                    }
