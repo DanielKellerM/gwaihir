@@ -2,7 +2,7 @@
 // Solderpad Hardware License, Version 0.51, see LICENSE for details.
 // SPDX-License-Identifier: SHL-0.51
 
-`include "hci_helpers.svh"
+// `include "hci_helpers.svh"
 
 module snitch_hwpe_subsystem
   import hci_package::*;
