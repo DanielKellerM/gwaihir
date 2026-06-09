@@ -180,8 +180,7 @@ module mem_tile
   // TODO: [ATTENTION] This part is related to the actual memory tile position, and the corresponding
   //                   address map, now the memory tile is at [x,y] = [{0,8},{0,1,2,3}]
   always_comb begin
-    // Default to an invalid SAM index; the MemTileXValid assertion (if present)
-    // guards against id_i.x / id_i.y combinations that would land here.
+    // Default to an L2Spm0SamIdx.
     unique case ({id_i.x, id_i.y})
       {4'd0, 2'd0}: mem_tile_idx = floo_gwaihir_noc_pkg::L2Spm0SamIdx;
       {4'd0, 2'd1}: mem_tile_idx = floo_gwaihir_noc_pkg::L2Spm1SamIdx;
@@ -191,7 +190,7 @@ module mem_tile
       {4'd8, 2'd1}: mem_tile_idx = floo_gwaihir_noc_pkg::L2Spm5SamIdx;
       {4'd8, 2'd2}: mem_tile_idx = floo_gwaihir_noc_pkg::L2Spm6SamIdx;
       {4'd8, 2'd3}: mem_tile_idx = floo_gwaihir_noc_pkg::L2Spm7SamIdx;
-      default     : mem_tile_idx = '1;
+      default     : mem_tile_idx = floo_gwaihir_noc_pkg::L2Spm0SamIdx;
     endcase
   end
 
@@ -245,8 +244,8 @@ module mem_tile
       start_addr: floo_gwaihir_noc_pkg::Sam[mem_tile_idx].start_addr,
       end_addr  : floo_gwaihir_noc_pkg::Sam[mem_tile_idx].end_addr},
     '{idx: DMA,
-      start_addr: floo_gwaihir_noc_pkg::Sam[mem_tile_idx + DmaIdxOffset].start_addr,
-      end_addr  : floo_gwaihir_noc_pkg::Sam[mem_tile_idx + DmaIdxOffset].end_addr}
+      start_addr: floo_gwaihir_noc_pkg::Sam[int'(mem_tile_idx) + DmaIdxOffset].start_addr,
+      end_addr  : floo_gwaihir_noc_pkg::Sam[int'(mem_tile_idx) + DmaIdxOffset].end_addr}
   };
 
   axi_xbar #(
@@ -332,8 +331,8 @@ module mem_tile
       end_addr  : floo_gwaihir_noc_pkg::Sam[mem_tile_idx].end_addr},
     // The address range for EXTERNAL is not the actual address range, all the unmapped requests will go to EXTERNAL
     '{idx: EXTERNAL,
-      start_addr: floo_gwaihir_noc_pkg::Sam[mem_tile_idx + DmaIdxOffset].start_addr,
-      end_addr  : floo_gwaihir_noc_pkg::Sam[mem_tile_idx + DmaIdxOffset].end_addr}
+      start_addr: floo_gwaihir_noc_pkg::Sam[int'(mem_tile_idx) + DmaIdxOffset].start_addr,
+      end_addr  : floo_gwaihir_noc_pkg::Sam[int'(mem_tile_idx) + DmaIdxOffset].end_addr}
   };
 
   axi_xbar #(
