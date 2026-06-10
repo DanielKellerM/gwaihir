@@ -46,15 +46,6 @@ init-deps:
     paths:
       - pd/ci.yml
 
-########################################
-# Generate RTL Sources and Addressmaps #
-########################################
-
-generate-rtl:
-  stage: build
-  extends:
-    - .generate-rtl-tpl
-
 ########################
 # Build Software Tests #
 ########################
@@ -77,9 +68,8 @@ vsim-compile:
   stage: build
   extends:
     - .init-env
-  needs:
-    - generate-rtl
   script:
+    - make gwaihir-hw-all
     - make vsim-compile | tee compile.log 2>&1
     - '! grep "\*\* Error" compile.log'
   artifacts:
@@ -91,9 +81,8 @@ vcs-compile:
   stage: build
   extends:
     - .init-env
-  needs:
-    - generate-rtl
   script:
+    - make gwaihir-hw-all
     - make vcs-compile-batch | tee compile.log 2>&1
     - '! grep "Error-\[" compile.log'
   artifacts:

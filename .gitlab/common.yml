@@ -5,18 +5,6 @@
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-# Generate the RTL sources
-.generate-rtl-tpl:
-  extends:
-    - .init-env
-  script:
-    - make gwaihir-hw-all
-  artifacts:
-    paths:
-      - .bender
-      - .generated
-    expire_in: 1 day
-
 # Compile the snitch software tests
 .sn-sw-tpl:
   stage: build
