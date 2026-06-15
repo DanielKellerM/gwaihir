@@ -326,7 +326,7 @@ package gwaihir_pkg;
     return ret;
   endfunction
 
-  // Define no multicast RouteCfg for Memory tiles, Chehsihre and FhG
+  // Define no multicast RouteCfg for Memory tiles, Cheshire and FhG
   localparam floo_pkg::route_cfg_t RouteCfgNoMcast = gen_nomcast_route_cfg();
 
   ////////////////
