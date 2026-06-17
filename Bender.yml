@@ -20,7 +20,7 @@ dependencies:
   common_cells: "1.39.0"
   snitch_cluster:     { git: "https://github.com/Jayanth2209/snitch_cluster.git",       rev: "05e9128ffde04aa28ade2c2eeb7e0d674d765b47" }
   cheshire:           { git: "https://github.com/pulp-platform/cheshire.git",           rev: "main"                                     }
-  mxcore:             { path: "../mxcore/mxcore-rtl"                                                                                    }
+  mxcore:             { git: "git@iis-git.ee.ethz.ch:mx/mxcore/mxcore-rtl.git",         rev: "a5f805d590c3c46024029dab3e9316119fdb9767" }
   datamover:          { git: "https://github.com/pulp-platform/datamover.git",          rev: "5df9c9bd9e10ad020763c4291c571adf35ef4ae2" }
   obi:                { git: "https://github.com/pulp-platform/obi.git",                rev: "acfcd0f80c7539aa8da7821a66d9acf2074a5b4e" }
   axi_obi:            { path: "hw/axi_obi"                                                                                              }

@@ -281,10 +281,10 @@ packages:
       Git: https://github.com/pulp-platform/L2_tcdm_hybrid_interco.git
     dependencies: []
   mxcore:
-    revision: null
+    revision: a5f805d590c3c46024029dab3e9316119fdb9767
     version: null
     source:
-      Path: ../mxcore/mxcore-rtl
+      Git: git@iis-git.ee.ethz.ch:mx/mxcore/mxcore-rtl.git
     dependencies:
     - fpnew
     - hci
