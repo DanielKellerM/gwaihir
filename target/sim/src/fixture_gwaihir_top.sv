@@ -131,6 +131,7 @@ module fixture_gwaihir_top;
   vip_cheshire_soc #(
     .DutCfg           (CheshireCfg),
     .UseDramSys       (1'b0),
+    .ClkPeriodJtag    (4ns),   // 50MHz->250MHz: shorter preload sim-time => fewer sys-clk edges => faster wall-clock
     .axi_ext_llc_req_t(axi_llc_req_t),
     .axi_ext_llc_rsp_t(axi_llc_rsp_t),
     .axi_ext_mst_req_t(axi_mst_req_t),
