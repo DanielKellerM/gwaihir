@@ -18,6 +18,7 @@ VLOGAN_ARGS += -assert svaext
 VLOGAN_ARGS += -timescale=1ns/1ps
 VLOGAN_ARGS += -nc
 
+VCS_FLAGS += -fgp=num_threads:8
 VCS_FLAGS_GUI  = -debug_access+all
 
 define add_vcs_flag
@@ -30,6 +31,7 @@ $(eval $(call add_vcs_flag,CHS_BINARY))
 $(eval $(call add_vcs_flag,SN_BINARY))
 $(eval $(call add_vcs_flag,BOOTMODE))
 $(eval $(call add_vcs_flag,PRELMODE))
+$(eval $(call add_vcs_flag,OFFLOAD_IMAGE))
 
 .PHONY: vcs-compile vcs-compile-batch vcs-clean vcs-run vcs-run-batch
 

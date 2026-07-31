@@ -41,6 +41,7 @@ SN_TESTS_INCDIRS  = $(SN_ROOT)/sw/kernels/blas
 SN_BUILD_APPS = OFF
 
 SN_APPS  = $(GW_SNITCH_SW_DIR)/apps/gemm_2d
+SN_APPS += $(GW_SNITCH_SW_DIR)/apps/qcs_replay
 SN_APPS += $(GW_SNITCH_SW_DIR)/apps/gemm
 SN_APPS += $(GW_SNITCH_SW_DIR)/apps/axpy
 SN_APPS += $(SN_ROOT)/sw/kernels/dnn/flashattention_2

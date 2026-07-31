@@ -56,11 +56,14 @@ module cluster_tile
   // actual address range for this exact tile, but it is sufficient since
   // the NoC will take care of routing the request to the correct tile.
   localparam int unsigned NumTileAddrMapRules = 1;
+  // Last cluster-config SAM entry, derived from the grid (SAM has a fixed stride per endpoint) -- not a hardcoded corner.
+  localparam int unsigned SamCfgStride    = ClusterConfigX0Y1SamIdx - ClusterConfigX0Y0SamIdx;
+  localparam int unsigned LastClusterCfg  = ClusterConfigX0Y0SamIdx + (NumClusterX*NumClusterY-1)*SamCfgStride;
   addr_rule_t [NumTileAddrMapRules-1:0] TileAddrMap = '{
       '{
           idx: TileCfg,
           start_addr: Sam[ClusterConfigX0Y0SamIdx].start_addr,
-          end_addr: Sam[ClusterConfigX3Y3SamIdx].end_addr
+          end_addr: Sam[LastClusterCfg].end_addr
       }
   };
   localparam int unsigned NumTileApbAddrMapRules = 1;

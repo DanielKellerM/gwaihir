@@ -55,11 +55,14 @@ module mem_tile
   // actual address range for this exact tile, but it is sufficient since
   // the NoC will take care of routing the request to the correct tile.
   localparam int unsigned NumTileAddrMapRules = 1;
+  // Last L2-SPM-config SAM entry, derived from NumL2Spm (same per-endpoint stride) -- not a hardcoded index.
+  localparam int unsigned SamCfgStride = ClusterConfigX0Y1SamIdx - ClusterConfigX0Y0SamIdx;
+  localparam int unsigned LastL2Cfg    = L2SpmConfig0SamIdx + (NumL2Spm-1)*SamCfgStride;
   addr_rule_t [NumTileAddrMapRules-1:0] TileAddrMap = '{
       '{
           idx: TileCfg,
           start_addr: Sam[L2SpmConfig0SamIdx].start_addr,
-          end_addr: Sam[L2SpmConfig1SamIdx].end_addr
+          end_addr: Sam[LastL2Cfg].end_addr
       }
   };
   localparam int unsigned NumTileApbAddrMapRules = 1;
