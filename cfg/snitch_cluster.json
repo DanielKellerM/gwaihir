@@ -85,7 +85,7 @@
         {
             name: "l2spm",
             address: 0x70000000,
-            length: 0x10000000,
+            length: 0x200000,
             cacheable: true
         },
         {

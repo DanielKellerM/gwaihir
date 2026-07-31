@@ -56,6 +56,11 @@ SN_TESTS = $(wildcard $(GW_SNITCH_SW_DIR)/tests/*.c)
 $(GW_GEN_DIR)/gw_noc_cfg.h: $(UTIL_DIR)/mako_render.py $(FLOO_CFG)
 	 $< -t $(SN_RUNTIME_SRCDIR)/gw_noc_cfg.h.tpl -y $(FLOO_CFG) -o $@
 
+# Snitch L3 (=L2-SPM) linker region, single-sourced from the generated addrmap
+# (cpp-included like cheshire/hybrid.ld.in) -- was a hardcoded 0x70000000/0x10000000.
+$(SN_RUNTIME_SRCDIR)/memory.ld: $(SN_RUNTIME_SRCDIR)/memory.ld.in $(GW_GEN_DIR)/gw_raw_addrmap.h
+	gcc -E -P -x c -I$(GW_GEN_DIR) $< -o $@
+
 include $(SN_ROOT)/make/sw.mk
 
 ##############
