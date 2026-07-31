@@ -7,3 +7,4 @@ snitch_cluster_raw_addrmap.h
 snitch_cluster_peripheral.h
 snitch_cluster_peripheral_addrmap.h
 snitch_cluster_addrmap.rdl
+memory.ld
