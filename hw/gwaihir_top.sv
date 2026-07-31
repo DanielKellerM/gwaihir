@@ -225,9 +225,18 @@ module gwaihir_top
   // UCIe tiles //
   ////////////////
 
+  // The UCIe SAM rules are the final NumUcieTiles entries of the SAM table (floogen
+  // appends the UCIe endpoint last). Derive the base index from SamNumRules and the
+  // mesh-derived UCIe tile count instead of the floo-generated Ucie0SamIdx enum value:
+  // floogen only emits Ucie0SamIdx when the configuration has a UCIe endpoint, so
+  // referencing it directly fails name resolution for any UCIe-less mesh even though
+  // this genvar loop has zero iterations there. SamNumRules and NumUcieTiles always
+  // exist, so this elaborates for every mesh and is value-identical on the 4x4 default
+  // (SamNumRules - NumUcieTiles = 40 - 2 = 38 = Ucie0SamIdx).
+  localparam int UcieSamIdxBase = int'(SamNumRules) - int'(NumUcieTiles);
   for (genvar u = 0; u < NumUcieTiles; u++) begin : gen_ucietile
 
-    localparam int UcieSamIdx = u + Ucie0SamIdx;
+    localparam int UcieSamIdx = u + UcieSamIdxBase;
     localparam id_t UcieId = Sam[UcieSamIdx].idx;
     localparam id_t UciePhysicalId = SamPhysical[UcieSamIdx].idx;
     localparam int UcieX = int'(UciePhysicalId.x);

@@ -89,7 +89,18 @@ package gwaihir_pkg;
   localparam int unsigned NumTiles = MeshDim.x * MeshDim.y;
   localparam int unsigned NumClusters = NumClusterX * NumClusterY;
   localparam int unsigned NumMemTiles = NumL2Spm;
-  localparam int unsigned NumUcieTiles = NumUcie;
+  // There is always exactly one Cheshire host tile.
+  localparam int unsigned NumCheshireTiles = 1;
+  // Derive the number of UCIe tiles from the occupied mesh slots instead of the
+  // floo-generated NumUcie localparam: floogen only emits NumUcie (and the Ucie*
+  // SAM indices) when the configuration actually instantiates a UCIe endpoint, so
+  // referencing NumUcie directly breaks elaboration for any mesh without UCIe.
+  // gwaihir tiles are exclusively clusters, L2-SPM mem tiles, the Cheshire host,
+  // and UCIe tiles, therefore the UCIe count is whatever occupied slots remain.
+  // This mirrors the NumDummyTiles idiom below (mesh-size-agnostic, value-identical
+  // to NumUcie on every config: e.g. 4x4 default = 21-16-2-1 = 2, 2x2 mini = 7-4-2-1 = 0).
+  localparam int unsigned NumUcieTiles =
+      $countones(MeshMap) - NumClusters - NumMemTiles - NumCheshireTiles;
 
   localparam int unsigned NumDummyTiles = NumTiles - $countones(MeshMap);
 

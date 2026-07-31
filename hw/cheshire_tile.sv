@@ -369,24 +369,58 @@ module cheshire_tile
   assign reg_req_o                                   = reg_ext_req[CshRegExtChipCtrl:CshRegExtFLL];
   assign reg_ext_rsp[CshRegExtChipCtrl:CshRegExtFLL] = reg_rsp_i;
 
-  // LLC master port tied to an error slave (no external DRAM via serial link)
-  axi_err_slv #(
-    .AxiIdWidth(CheshireCfg.AxiMstIdWidth + $clog2(
-        csh_axi__AxiIn.num_in
-    ) + CheshireCfg.LlcNotBypass),
-    .axi_req_t(csh_axi_llc_req_t),
-    .axi_resp_t(csh_axi_llc_rsp_t),
-    .Resp(axi_pkg::RESP_DECERR),
-    .RespWidth(CheshireCfg.AxiDataWidth),
-    .RespData(64'hCA11AB1EBADCAB1E),
-    .ATOPs(1'b1),
-    .MaxTrans(4)  // TODO maybe tune, but this block should never be used.
-  ) i_llc_err_slv (
+  // LLC master port backed by a simulation memory model so that external DRAM
+  // (LlcOutRegionStart .. End, base 0x8000_0000) is a real, functional,
+  // CVA6-executable+cached backing store in co-simulation. The memory array is
+  // reachable for testbench backdoor access as
+  //   fix.dut.i_cheshire_tile.i_llc_sim_mem.mem
+  // axi_sim_mem does not support ATOPs, which is fine: atomics are resolved in
+  // the LLC/Cheshire crossbar before reaching this master port.
+  // axi_sim_mem ports are NumPorts-wide unpacked arrays; wrap the scalar LLC
+  // master signals into 1-element arrays for connection.
+  csh_axi_llc_req_t [0:0] llc_sim_mem_req;
+  csh_axi_llc_rsp_t [0:0] llc_sim_mem_rsp;
+  assign llc_sim_mem_req[0] = axi_llc_req;
+  assign axi_llc_rsp        = llc_sim_mem_rsp[0];
+
+  // IdWidth derived directly from the LLC AW id field ($bits) -- robust against
+  // the exact width arithmetic. Delays mirror the UPSTREAM Cheshire DRAM
+  // sim_mem (vip_cheshire_soc.sv: ApplDelay = ClkPeriodSys*0.1 = 0.5ns,
+  // AcqDelay = ClkPeriodSys*0.9 = 4.5ns at a 5ns system clock). ZERO delays
+  // cause an AW/W same-cycle sampling race -> "Expected last beat of W burst!"
+  // assertion flood; non-zero delays sample AW before W deterministically.
+  axi_sim_mem #(
+    .AddrWidth        (CheshireCfg.AddrWidth),
+    .DataWidth        (CheshireCfg.AxiDataWidth),
+    .IdWidth          ($bits(axi_llc_req.aw.id)),
+    .UserWidth        (CheshireCfg.AxiUserWidth),
+    .NumPorts         (32'd1),
+    .axi_req_t        (csh_axi_llc_req_t),
+    .axi_rsp_t        (csh_axi_llc_rsp_t),
+    .WarnUninitialized(1'b0),
+    .UninitializedData("zeros"),
+    .ClearErrOnAccess (1'b1),
+    .ApplDelay        (0.5ns),
+    .AcqDelay         (4.5ns)
+  ) i_llc_sim_mem (
     .clk_i,
     .rst_ni,
-    .test_i    (test_mode_i),
-    .slv_req_i (axi_llc_req),
-    .slv_resp_o(axi_llc_rsp)
+    .axi_req_i         (llc_sim_mem_req),
+    .axi_rsp_o         (llc_sim_mem_rsp),
+    .mon_w_valid_o     (),
+    .mon_w_addr_o      (),
+    .mon_w_data_o      (),
+    .mon_w_id_o        (),
+    .mon_w_user_o      (),
+    .mon_w_beat_count_o(),
+    .mon_w_last_o      (),
+    .mon_r_valid_o     (),
+    .mon_r_addr_o      (),
+    .mon_r_data_o      (),
+    .mon_r_id_o        (),
+    .mon_r_user_o      (),
+    .mon_r_beat_count_o(),
+    .mon_r_last_o      ()
   );
 
   // Add Assertion that no multicast / reduction can enter this tile!

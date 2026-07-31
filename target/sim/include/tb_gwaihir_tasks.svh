@@ -155,6 +155,73 @@ task automatic fastmode_elf_preload(input string binary, output cheshire_pkg::do
   $display("[FAST_PRELOAD] Preload complete");
 endtask
 
+// Phase-2 HYBRID host preload. The host ELF has two segments:
+//   .text @ 0x10000000  -> Cheshire internal SPM: CVA6-executable + cached +
+//                          coherent. Loaded over JTAG (the fastmode backdoor
+//                          only reaches the L2-SPM tc_srams, and the Cheshire
+//                          SPM lives inside the SoC). .text is ~121 KiB so the
+//                          slow JTAG path is tolerable.
+//   .misc/.bss @ 0x70014000 -> L2-SPM: CVA6 load/store-accessible (NOT fetch),
+//                          shared with the cluster firmware. Backdoor-loaded
+//                          via the fastmode tc_sram write path (instant).
+// Requires the hart to be halted (jtag_wait_for_llc_config_halt) before the
+// JTAG section load. Returns the ELF entry (0x10000000).
+task automatic hybrid_host_elf_preload(input string binary, output cheshire_pkg::doub_bt entry);
+  import floo_gwaihir_noc_pkg::*;
+  longint sec_addr, sec_len, write_addr;
+  $display("[HYBRID] Preloading host ELF binary: %s", binary);
+  if (read_elf(binary)) $fatal(1, "[HYBRID] Failed to load ELF!");
+  while (get_section(sec_addr, sec_len)) begin
+    byte bf[] = new [sec_len];
+    if (read_section(sec_addr, bf, sec_len)) $fatal(1, "[HYBRID] Failed to read ELF section!");
+    if (sec_addr % 4 != 0 || sec_len % 4 != 0)
+      $fatal(1, "[HYBRID] Section addr/len not word-aligned");
+    if (sec_addr >= Sam[L2Spm0SamIdx].start_addr &&
+        sec_addr <  Sam[L2Spm0SamIdx+2*NumMemTiles-2].end_addr) begin
+      // L2-SPM data section: instant backdoor write.
+      $display("[HYBRID] L2-SPM (fastmode) section @ 0x%h (%0d bytes)", sec_addr, sec_len);
+      for (int i = 0; i < sec_len; i += 4) begin
+        write_addr = sec_addr + i;
+        fastmode_write_word(write_addr, {bf[i+3], bf[i+2], bf[i+1], bf[i]});
+      end
+    end else begin
+      // Cheshire-SPM (or other in-SoC) executable section: JTAG load (hart must
+      // already be halted by the caller).
+      $display("[HYBRID] Cheshire-SPM (JTAG) section @ 0x%h (%0d bytes)", sec_addr, sec_len);
+      fix.vip.jtag_load_section(sec_addr, bf, sec_len);
+    end
+  end
+  void'(get_entry(entry));
+  $display("[HYBRID] Host preload complete (entry 0x%h)", entry);
+endtask
+
+// Phase-2 PRINCIPLED DRAM host preload. The host ELF (dram_host.ld) places ALL
+// segments (.text/.misc/.bss/.arena) in external DRAM (0x80000000), which is now
+// a real backing store: the gwaihir LLC master port is backed by an axi_sim_mem
+// (i_llc_sim_mem) instead of an axi_err_slv. 0x80000000 is a CVA6 ExecuteRegion
+// + CachedRegion, so the CVA6 fetches+runs the host directly from DRAM. We
+// backdoor-write the ELF sections into the sim_mem byte array (instant), then the
+// caller resumes hart 0 at the ELF entry (0x80000000). The QCS shared region +
+// A/B/C live in the L2-SPM at runtime (carved by the cluster allocator); only the
+// firmware is preloaded there. The LLC config / hart halt is handled by the
+// caller (jtag_wait_for_llc_config_halt) exactly as the hybrid path.
+task automatic dram_host_elf_preload(input string binary, output cheshire_pkg::doub_bt entry);
+  longint sec_addr, sec_len;
+  $display("[DRAM] Preloading host ELF binary into axi_sim_mem: %s", binary);
+  if (read_elf(binary)) $fatal(1, "[DRAM] Failed to load ELF!");
+  while (get_section(sec_addr, sec_len)) begin
+    byte bf[] = new [sec_len];
+    if (read_section(sec_addr, bf, sec_len)) $fatal(1, "[DRAM] Failed to read ELF section!");
+    $display("[DRAM] sim_mem section @ 0x%h (%0d bytes)", sec_addr, sec_len);
+    // axi_sim_mem.mem is a byte-indexed associative array keyed by full address.
+    for (longint i = 0; i < sec_len; i++) begin
+      fix.dut.i_cheshire_tile.i_llc_sim_mem.mem[sec_addr + i] = bf[i];
+    end
+  end
+  void'(get_entry(entry));
+  $display("[DRAM] Host preload complete (entry 0x%h)", entry);
+endtask
+
 // Suitable for loading ELFs with 32b-aligned sections
 task automatic jtag_32b_elf_preload(input string binary, output bit [63:0] entry);
   longint sec_addr, sec_len;

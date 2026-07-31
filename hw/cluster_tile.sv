@@ -56,11 +56,28 @@ module cluster_tile
   // actual address range for this exact tile, but it is sufficient since
   // the NoC will take care of routing the request to the correct tile.
   localparam int unsigned NumTileAddrMapRules = 1;
+  // The TileCfg demux rule must span the *entire* cluster-config aperture so that
+  // any cluster-config request is steered to the tile-config path (the NoC then
+  // routes it to the exact destination tile -- see the NOTE above).
+  //
+  // The previous hard-coded `Sam[ClusterConfigX3Y3SamIdx].end_addr` assumed a 4x4
+  // mesh whose corner cluster is X3Y3; for any other mesh size the X3Y3 SAM index
+  // does not exist. Instead, derive the top of the cluster-config aperture in a
+  // mesh-size-agnostic way: the cluster-config regions are contiguous and equal in
+  // size (one per cluster, laid out by floogen for the cluster array endpoint), so
+  // the aperture top is the base plus NumClusters times the per-cluster region size.
+  // This is value-identical to Sam[ClusterConfigX3Y3SamIdx].end_addr on the 4x4
+  // default (0x6000_0000 + 16*0x1000 = 0x6001_0000) and correct for any NxM mesh
+  // (e.g. 2x2 mini: 0x6000_0000 + 4*0x1000 = 0x6000_4000 == ClusterConfigX1Y1 end).
+  localparam addr_t ClusterCfgBase = addr_t'(Sam[ClusterConfigX0Y0SamIdx].start_addr);
+  localparam addr_t ClusterCfgRegionSize =
+      addr_t'(Sam[ClusterConfigX0Y0SamIdx].end_addr - Sam[ClusterConfigX0Y0SamIdx].start_addr);
+  localparam addr_t ClusterCfgTop = ClusterCfgBase + addr_t'(NumClusters) * ClusterCfgRegionSize;
   addr_rule_t [NumTileAddrMapRules-1:0] TileAddrMap = '{
       '{
           idx: TileCfg,
-          start_addr: Sam[ClusterConfigX0Y0SamIdx].start_addr,
-          end_addr: Sam[ClusterConfigX3Y3SamIdx].end_addr
+          start_addr: ClusterCfgBase,
+          end_addr: ClusterCfgTop
       }
   };
   localparam int unsigned NumTileApbAddrMapRules = 1;

@@ -48,6 +48,7 @@ SN_APPS += $(GW_SNITCH_SW_DIR)/apps/fused_concat_linear
 SN_APPS += $(GW_SNITCH_SW_DIR)/apps/mha
 SN_APPS += $(GW_SNITCH_SW_DIR)/apps/summa_gemm
 SN_APPS += $(GW_SNITCH_SW_DIR)/apps/power_benchmarks
+SN_APPS += $(GW_SNITCH_SW_DIR)/apps/qcs_replay
 
 SN_TESTS = $(wildcard $(GW_SNITCH_SW_DIR)/tests/*.c)
 

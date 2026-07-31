@@ -12,6 +12,11 @@
 #define SNRT_INIT_CLS
 #define SNRT_INIT_LIBS
 #define SNRT_CRT0_PRE_BARRIER
+// NOTE: an SNRT_CRT0_CALLBACK1 wake marker that stored to L2-SPM (0x70010100)
+// this early in crt0 WEDGED the run (cluster/NoC hang at ~103ms, host poll
+// back-pressured) -- a snitch-core store to external memory before the cluster
+// memory path is up. Removed; use the firmware's own dbg phases + a host-side
+// C[0] dump instead (which reaches the poll on the run2-proven path).
 #define SNRT_INVOKE_MAIN
 #define SNRT_CRT0_POST_BARRIER
 #define SNRT_CRT0_EXIT

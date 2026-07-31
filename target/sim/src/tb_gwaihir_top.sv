@@ -26,11 +26,12 @@ module tb_gwaihir_top;
   string        preload_elf;
   string        boot_hex;
   logic  [ 1:0] boot_mode;
-  logic  [ 1:0] preload_mode;
+  logic  [ 3:0] preload_mode;  // widened: PRELMODE=4 (DRAM) needs >2 bits
   bit    [31:0] exit_code;
   bit           snitch_preload;
   string        snitch_elf;
   logic  [63:0] snitch_entry;
+  logic  [63:0] chs_entry;
   int           snitch_fn;
   int           chs_fn;
 
@@ -85,13 +86,38 @@ module tb_gwaihir_top;
             $fatal(1, "Unsupported snitch binary preload mode %d (UART)!", preload_mode);
           fix.vip.uart_debug_elf_run_and_wait(preload_elf, exit_code);
         end
-        3: begin  // Fast Mode
+        3: begin  // Fast Mode (Phase-2 HYBRID host placement)
           jtag_enable_tiles();  // Write control registers
           if (snitch_preload) fastmode_elf_preload(snitch_elf, snitch_entry);
-          // TODO(fischeti): Implement fast mode for Cheshire binary
-          fix.vip.jtag_elf_run(preload_elf);
+          // Phase-2 host blocker fix: the host ELF (hybrid.ld) splits into
+          //   .text @ 0x10000000 (Cheshire SPM: the ONLY CVA6-executable +
+          //                       coherent region big enough -- 128 KiB HW),
+          //   .misc/.bss @ 0x70014000 (L2-SPM: CVA6 load/store + cluster-shared).
+          // The L2-SPM aperture (0x70000000) is NOT a CVA6 ExecuteRegion, so
+          // fetching the host from there returns X (the original blocker).
+          // Backdoor the L2-SPM data, JTAG-load .text into the Cheshire SPM,
+          // then resume from the ELF entry (0x10000000).
+          fix.vip.jtag_init();
+          fix.vip.jtag_wait_for_llc_config_halt();  // wait LLC cfg + halt hart 0
+          hybrid_host_elf_preload(preload_elf, chs_entry);  // L2 fastmode + SPM JTAG
+          fix.vip.jtag_elf_run_no_preload(preload_elf);  // set PC=entry + resume
           fix.vip.jtag_wait_for_eoc(exit_code);
           if (snitch_preload) fastmode_read();
+        end
+        4: begin  // PRINCIPLED DRAM host placement (axi_sim_mem behind the LLC)
+          jtag_enable_tiles();  // Write control registers
+          if (snitch_preload) jtag_32b_elf_preload(snitch_elf, snitch_entry);  // DIAG: JTAG fw preload (isolate fastmode)
+          // The host ELF is linked entirely into external DRAM (0x80000000),
+          // which is now a real CVA6-executable+cached memory: the gwaihir LLC
+          // master port is backed by axi_sim_mem (i_llc_sim_mem), not an
+          // axi_err_slv. Backdoor the ELF into the sim_mem, then resume hart 0
+          // at the DRAM entry. No SPM crutch, no JTAG text load.
+          fix.vip.jtag_init();
+          fix.vip.jtag_wait_for_llc_config_halt();  // wait LLC cfg + halt hart 0
+          dram_host_elf_preload(preload_elf, chs_entry);  // sim_mem backdoor
+          fix.vip.jtag_elf_run_no_preload(preload_elf);   // set PC=entry + resume
+          fix.vip.jtag_wait_for_eoc(exit_code);
+          // if (snitch_preload) fastmode_read();  // DIAG: disabled (JTAG fw above)
         end
         default: begin
           $fatal(1, "Unsupported preload mode %d (reserved)!", boot_mode);
