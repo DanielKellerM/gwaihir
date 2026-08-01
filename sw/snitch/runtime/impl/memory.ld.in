@@ -1,0 +1,13 @@
+/* Copyright 2025 ETH Zurich and University of Bologna. */
+/* Licensed under the Apache License, Version 2.0, see LICENSE for details. */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Snitch L3 region, single-sourced from the generated SoC addrmap (cpp-included,
+   like cheshire/hybrid.ld.in) instead of a hardcoded 0x70000000 / 0x10000000 whose
+   LENGTH was 128x the real GW_L2_SPM_TOTAL_SIZE. On gwaihir L3 is the L2-SPM. */
+#include "gw_raw_addrmap.h"
+
+MEMORY
+{
+    L3 (rwxa) : ORIGIN = GW_L2_SPM_BASE_ADDR(0), LENGTH = GW_L2_SPM_TOTAL_SIZE
+}

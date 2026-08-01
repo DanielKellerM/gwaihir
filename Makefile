@@ -107,9 +107,23 @@ SN_GEN_DIR = $(GW_GEN_DIR)
 include $(SN_ROOT)/make/common.mk
 include $(SN_ROOT)/make/rtl.mk
 
-$(SN_CFG): SN_CLUSTERS = $(shell $(FLOO_GEN) query -c $(FLOO_CFG) endpoints.cluster.num 2>/dev/null)
+# Snitch cluster cfg apertures single-sourced from the NoC yaml (the ONE place the
+# cluster/L2-SPM/DRAM bases live) -- extends the nr_clusters query+sed. sed replaces
+# only the hex literal after each key, preserving the JSON5 trailing commas.
+$(SN_CFG): SN_CLUSTERS  = $(shell $(FLOO_GEN) query -c $(FLOO_CFG) endpoints.cluster.num 2>/dev/null)
+$(SN_CFG): SN_CL_BASE   = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_CFG) 'endpoints.cluster.addr_range[0].base' 2>/dev/null))
+$(SN_CFG): SN_CL_OFFSET = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_CFG) 'endpoints.cluster.addr_range[0].size' 2>/dev/null))
+$(SN_CFG): SN_L2_BASE   = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_CFG) 'endpoints.l2_spm.addr_range[0].base' 2>/dev/null))
+$(SN_CFG): SN_L2_LEN    = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_CFG) 'endpoints.l2_spm.num * endpoints.l2_spm.addr_range[0].size' 2>/dev/null))
+$(SN_CFG): SN_DRAM_BASE = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_CFG) 'endpoints.cheshire.addr_range[1].start' 2>/dev/null))
+$(SN_CFG): SN_DRAM_LEN  = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_CFG) 'endpoints.cheshire.addr_range[1].end - endpoints.cheshire.addr_range[1].start' 2>/dev/null))
 $(SN_CFG): $(FLOO_CFG)
+	@command -v $(FLOO_GEN) >/dev/null || { echo "ERROR: $(FLOO_GEN) not on PATH (activate the floogen venv)"; exit 1; }
 	@sed -i 's/nr_clusters: .*/nr_clusters: $(SN_CLUSTERS),/' $@
+	@sed -i 's/\(cluster_base_addr:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_CL_BASE)/' $@
+	@sed -i 's/\(cluster_base_offset:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_CL_OFFSET)/' $@
+	@sed -i '/name: "l2spm"/,/}/{ s/\(address:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_L2_BASE)/; s/\(length:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_L2_LEN)/ }' $@
+	@sed -i '/name: "dram"/,/}/{ s/\(address:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_DRAM_BASE)/; s/\(length:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_DRAM_LEN)/ }' $@
 
 .PHONY: sn-hw-clean sn-hw-all
 
