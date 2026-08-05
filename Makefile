@@ -119,6 +119,7 @@ $(SN_CFG): SN_DRAM_BASE = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_C
 $(SN_CFG): SN_DRAM_LEN  = $(shell printf '0x%x' $$($(FLOO_GEN) query -c $(FLOO_CFG) 'endpoints.cheshire.addr_range[1].end - endpoints.cheshire.addr_range[1].start' 2>/dev/null))
 $(SN_CFG): $(FLOO_CFG)
 	@command -v $(FLOO_GEN) >/dev/null || { echo "ERROR: $(FLOO_GEN) not on PATH (activate the floogen venv)"; exit 1; }
+	@for kv in 'nr_clusters:$(SN_CLUSTERS)' 'cluster_base_addr:$(SN_CL_BASE)' 'cluster_base_offset:$(SN_CL_OFFSET)' 'l2spm_addr:$(SN_L2_BASE)' 'l2spm_len:$(SN_L2_LEN)' 'dram_addr:$(SN_DRAM_BASE)' 'dram_len:$(SN_DRAM_LEN)'; do case "$${kv#*:}" in ''|0x0) echo "ERROR: floogen query '$${kv%%:*}' from $(FLOO_CFG) is empty/0x0 -- endpoint renamed or query failed"; exit 1;; esac; done
 	@sed -i 's/nr_clusters: .*/nr_clusters: $(SN_CLUSTERS),/' $@
 	@sed -i 's/\(cluster_base_addr:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_CL_BASE)/' $@
 	@sed -i 's/\(cluster_base_offset:[[:space:]]*\)0x[0-9a-fA-F]*/\1$(SN_CL_OFFSET)/' $@
